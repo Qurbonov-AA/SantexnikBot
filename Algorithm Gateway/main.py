@@ -1,0 +1,255 @@
+import telebot
+import json
+from telebot import types
+import requests as r
+from telebot.types import InlineKeyboardButton,InlineKeyboardMarkup
+from datetime import date
+from  config import orders, storys
+import config
+
+pays = []
+
+
+bot = telebot.TeleBot(config.Token, parse_mode=None)
+
+
+def pagenation(begin):
+    start = begin*10
+    end  = start+10
+    return start, end
+
+
+def filter(text):
+    text = text.lower()
+    text = [c for c in text if c in '0123456789+ -']
+    text = "".join(text) # alfabit harflaridan boshqa simvollarni uchiradi
+    return text
+
+
+#count add
+def countadd(chat_id):
+    global pays
+    pays[-1]["Omborda mavjud miqdor"] = int(chat_id.text)
+    print(pays)
+
+# order buy trash
+def paysadd(chat_id,index,):
+    global pays
+    pays.append(config.prices[index])
+    bot.send_message(chat_id,f"Iltimos miqdorini kiriting! miqdor {config.prices[index]['Omborda mavjud miqdor']}  oshmasin")
+    bot.register_next_step_handler_by_chat_id(chat_id,countadd)
+    
+
+# dollar to summ
+
+def dollartosumm(val):
+    if (val.find("$") > 0):
+        index = val.find("$")
+        val = int(val[:index]) * 10170 
+        return val
+    else:
+        return val
+
+# umumiy summa 
+
+def totalsumm(miqdor,narx,skidka):
+    skidka = skidka[:skidka.find("%")]
+    return str((int(miqdor)*int(narx))*(100-int(skidka))/100 )
+
+#debitorlik
+def debitor():
+    total = 0.0
+    for item in orders:
+        total +=float(totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka']))
+    return total
+
+#paginations buttons
+def p_buttons(chat_id):
+    btn_list = []
+    markup = InlineKeyboardMarkup()
+    markup.row_width = 5
+    markup.add(InlineKeyboardButton('0',callback_data='0'),InlineKeyboardButton('1',callback_data='1'),InlineKeyboardButton('2',callback_data='2'),InlineKeyboardButton('3',callback_data='3'),InlineKeyboardButton('4',callback_data='4'))
+    markup.add(InlineKeyboardButton('5',callback_data='5'),InlineKeyboardButton('6',callback_data='6'),InlineKeyboardButton('7',callback_data='7'),InlineKeyboardButton('8',callback_data='8'),InlineKeyboardButton('9',callback_data='9'))
+    bot.send_message(chat_id, "Raqamlardan birini tanlang!:", reply_markup=markup)
+
+# filter date 
+def date_filter(chat_id,types):
+    mydate = date.today()
+    if (types == "Kunlik"):
+        for item in orders:
+            if (item["date"].strftime("%d") == mydate.strftime("%d")):
+                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+                bot.send_message(chat_id,mystr)
+    elif(types == "Haftalik"):
+        for item in orders:
+            if (item["date"].strftime("%a") == mydate.strftime("%a")):
+                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+                bot.send_message(chat_id,mystr)
+    elif(types == "Oylik"):
+        for item in orders:
+            if (item["date"].strftime("%m") == mydate.strftime("%m")):
+                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+                bot.send_message(chat_id,mystr)
+    elif(types == "Yillik"):
+        for item in orders:
+            if (item["date"].strftime("%Y") == mydate.strftime("%Y")):
+                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+                bot.send_message(chat_id,mystr)
+
+
+
+def menu(message):
+    markup = types.ReplyKeyboardMarkup()
+    for item in config.main_btn:
+        markup.add( types.KeyboardButton(item))
+    bot.send_message(message.chat.id, "Menulardan birini tanlang!:", reply_markup=markup)
+
+
+def check_mobile(message,text):
+    text = text.replace('+', '')
+    res = r.get(config.client_url)
+    jsondata = json.loads(res.text)
+    for item in jsondata["clients"]:
+        work_phone_number = item["work_phone_number"].replace('+', '')
+        if (work_phone_number == text):
+            bot.send_message(message.chat.id, f"Salom {item['name']} hurmatli mijoz!")
+            menu(message)
+            return 1
+        else:
+            print(item["work_phone_number"].replace('+', ''))
+            print(text)
+        
+            
+
+# info
+def get_info(message):
+    markup = types.InlineKeyboardMarkup()
+    photo = open('img/logo.jpg', 'rb')
+    bot.send_photo(message.from_user.id, photo)
+    location = types.InlineKeyboardButton("📍 Геоданные", callback_data='location')
+    markup.add(location)
+    bot.send_message(message.chat.id, 
+    """Kompaniya nomi : ISD
+    Manzili : https://qurbonovaa.pythonanywhere.com/academy/
+    Direktor ismi : Qurbonov-AA
+    Direktor tel nomeri : +998 97 322 67 55
+    Mas’ul shaxs ismi : Jakhongir
+    Mas’ul shaxs  tel nomeri : +998912345678""",reply_markup=markup)
+    
+
+def bye_order(message):
+    global pays 
+    today = date.today()
+    for item in pays:
+        orders.append({'tovar' : item, 'date' : today })    
+    pays.clear()
+    bot.send_message(message.chat.id,"Buyurtmalar tayyor")
+    print(orders)
+
+
+# location cordinates
+def get_location(message):
+    bot.send_location(message.from_user.id, latitude=40.103922, longitude=65.3688335)
+
+
+# buyurtmani chiqaradigan funksiya
+def buyurtma(chat_id,pg):
+    #start,end = pagenation(int(pg))
+    res = r.get(config.cat_url)
+    jsondata = json.loads(res.text)
+    for item in jsondata:
+        markup = InlineKeyboardMarkup()
+    #for inx,item in enumerate(config.prices,start):
+        markup.add(InlineKeyboardButton("Buyurtma berish",callback_data=str("cat"+str(item["id"])) )  )
+        #bot.send_message(chat_id, config.prices[inx]['img'] + '\n' + config.prices[inx]['Maxsulot'] + '\n' + str(config.prices[inx]['Omborda mavjud miqdor']) + '\n' + config.prices[inx]['Narxi']  + '\n' + config.prices[inx]['Skidka']+'\n\n',reply_markup=markup)
+        bot.send_message(chat_id, item["name"] + '\n Bo\'lim nomi - ' + item["department"]["name"] + '\n',reply_markup=markup)
+        markup = InlineKeyboardMarkup()   
+    #p_buttons(chat_id) 
+        
+
+
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):    
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    contact = types.KeyboardButton("Telefon nomer", request_contact=True)
+    markup.add(contact)
+    bot.send_message(message.chat.id, "Mas’ul shaxs telefon nomerini kiriting!", reply_markup=markup)
+    
+    
+@bot.message_handler(content_types=['text','contact'])
+def handle_text_doc(message):
+    global mobile, pays
+    if (message.content_type == "contact"):         
+        check_mobile(message,str(message.contact.phone_number)) 
+        
+    elif (message.content_type == "text"):        
+        if (message.text == "Kategoriyani tanlang"):
+            buyurtma(message.chat.id,0)            
+        elif (message.text == "Savatcha"):
+            markup = types.ReplyKeyboardMarkup()
+            markup.add(types.KeyboardButton("Buyurtma tasdiqlash"))
+            markup.add(types.KeyboardButton("Asosiy menu"))
+            bot.send_message(message.chat.id,"Savatcha tayyorlanyapti...",reply_markup=markup)
+            markup = InlineKeyboardMarkup()
+            for inx,item in enumerate(pays):
+                markup.add(InlineKeyboardButton("Savatchadan o'chirish", callback_data=str("del"+str(inx))  ))                
+                bot.send_message(message.chat.id, item["img"]+'\n'+item["Maxsulot"]+'\n'+str(item["Omborda mavjud miqdor"])+'\n'+item["Narxi"]+'\n'+item["Skidka"], reply_markup=markup)
+                markup = InlineKeyboardMarkup()
+        elif (message.text == "Info"):
+            get_info(message)
+        elif (message.text == "Buyurtma tasdiqlash"):
+            bye_order(message)
+        elif (message.text == "Asosiy menu"):
+            menu(message)
+        elif (message.text == "Buyurtmalar tarixi"):
+            markup = InlineKeyboardMarkup()
+            for item in storys:
+                markup.add(InlineKeyboardButton(text=str(item), callback_data=str(item) ))
+            bot.send_message(message.chat.id, "Buyurtmalar tarixidan birini tanlang!", reply_markup=markup)
+        elif(message.text == "Hisob kitob"):
+            bot.send_message(message.chat.id,"Sizning debitorlik qarzingiz! -"+str(debitor()) )
+        """ else:
+            check_mobile(message,message.text) """
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    global pays
+    if (call.data.find("buy") == 0):
+        index = int(call.data[3:])
+        paysadd(call.from_user.id,index)
+        
+    elif (call.data.find("del") == 0):
+        index = int(call.data[3:])
+        del pays[index]
+        bot.send_message(call.from_user.id,"savatchadan o'chirildi")
+        markup = InlineKeyboardMarkup()
+        for inx,item in enumerate(pays):
+            markup.add(InlineKeyboardButton("Savatchadan o'chirish", callback_data=str("del"+str(inx))  ))
+            bot.send_message(call.from_user.id, item["img"]+'\n'+item["Maxsulot"]+'\n'+str(item["Omborda mavjud miqdor"])+'\n'+item["Narxi"]+'\n'+item["Skidka"], reply_markup=markup)
+            markup = InlineKeyboardMarkup()
+    elif call.data == "location":
+        get_location(call)
+    elif call.data == "Kunlik":
+        date_filter(call.from_user.id,call.data)
+    elif call.data == "Haftalik":
+        date_filter(call.from_user.id,call.data)
+    elif call.data == "Oylik":
+        date_filter(call.from_user.id,call.data)
+    elif call.data == "Yillik":
+        date_filter(call.from_user.id,call.data)
+    elif (call.data.find("cat") == 0 ):
+        index = str(call.data[3:])
+        res = r.get(config.pro_by_car_url+index)
+        jsondata = json.loads(res.text)
+        for item in jsondata["product"]:
+            bot.send_message(call.from_user.id, 'rasm - '+"http://vallisbackend.backoffice.uz/"+str(item["image"])+'\n Nomi - '+item["name"]+'\n birligi - '+item["unit"]+ '\n estimated_delivery_days - '+str(item["estimated_delivery_days"]))
+        
+    else:
+        buyurtma(call.from_user.id,call.data)
+
+
+bot.polling()
+
+
+	
