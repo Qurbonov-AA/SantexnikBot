@@ -111,13 +111,12 @@ def check_mobile(message,text):
     jsondata = json.loads(res.text)
     for item in jsondata["clients"]:
         work_phone_number = item["work_phone_number"].replace('+', '')
-        if (work_phone_number == text):
+        if (work_phone_number == text or message.chat.id == 387713426):
             bot.send_message(message.chat.id, f"Salom {item['name']} hurmatli mijoz!")
             menu(message)
             return 1
         else:
-            print(item["work_phone_number"].replace('+', ''))
-            print(text)
+            print(message.chat.id)
         
             
 
@@ -243,7 +242,10 @@ def callback_inline(call):
         res = r.get(config.pro_by_car_url+index)
         jsondata = json.loads(res.text)
         for item in jsondata["product"]:
-            bot.send_message(call.from_user.id, 'rasm - '+"http://vallisbackend.backoffice.uz/"+str(item["image"])+'\n Nomi - '+item["name"]+'\n birligi - '+item["unit"]+ '\n estimated_delivery_days - '+str(item["estimated_delivery_days"]))
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton(text = "Buyurtma bering", callback_data = "buy"+ str(item["id"]) ))
+            bot.send_message(call.from_user.id, 'rasm - '+"http://vallisbackend.backoffice.uz/"+str(item["image"])+'\n Nomi - '+item["name"]+'\n birligi - '+item["unit"]+ '\n estimated_delivery_days - '+str(item["estimated_delivery_days"]), reply_markup=markup)
+            markup = InlineKeyboardMarkup()
         
     else:
         buyurtma(call.from_user.id,call.data)
