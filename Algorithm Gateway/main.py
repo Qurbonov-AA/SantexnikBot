@@ -29,14 +29,18 @@ def filter(text):
 #count add
 def countadd(chat_id):
     global pays
-    pays[-1]["Omborda mavjud miqdor"] = int(chat_id.text)
+    pays[-1]["miqdor"] = int(chat_id.text)
     print(pays)
 
 # order buy trash
 def paysadd(chat_id,index,):
     global pays
-    pays.append(config.prices[index])
-    bot.send_message(chat_id,f"Iltimos miqdorini kiriting! miqdor {config.prices[index]['Omborda mavjud miqdor']}  oshmasin")
+    res = r.get(config.pro_buy_price_url)
+    jsondata = json.loads(res.text)
+    for item in jsondata["results"]:
+        if (item["id"] == index):
+            pays.append(item)            
+    bot.send_message(chat_id,f"Iltimos miqdorini kiriting! narxi - {item['price']} ")
     bot.register_next_step_handler_by_chat_id(chat_id,countadd)
     
 
@@ -109,6 +113,7 @@ def check_mobile(message,text):
     text = text.replace('+', '')
     res = r.get(config.client_url)
     jsondata = json.loads(res.text)
+    print(message.chat.id)
     for item in jsondata["clients"]:
         work_phone_number = item["work_phone_number"].replace('+', '')
         if (work_phone_number == text or message.chat.id == 387713426):
@@ -193,12 +198,12 @@ def handle_text_doc(message):
             markup = InlineKeyboardMarkup()
             for inx,item in enumerate(pays):
                 markup.add(InlineKeyboardButton("Savatchadan o'chirish", callback_data=str("del"+str(inx))  ))                
-                bot.send_message(message.chat.id, item["img"]+'\n'+item["Maxsulot"]+'\n'+str(item["Omborda mavjud miqdor"])+'\n'+item["Narxi"]+'\n'+item["Skidka"], reply_markup=markup)
+                bot.send_message(message.chat.id, 'rasmi - '+str(item["product"]["image"])+'\n Maxsulot nomi - '+item["product"]["name"]+'\n miqdori - '+str(item["miqdor"])+'\n narxi - '+str(item["price"])+'\n', reply_markup=markup)
                 markup = InlineKeyboardMarkup()
         elif (message.text == "Info"):
             get_info(message)
         elif (message.text == "Buyurtma tasdiqlash"):
-            bye_order(message)
+               (message)
         elif (message.text == "Asosiy menu"):
             menu(message)
         elif (message.text == "Buyurtmalar tarixi"):
@@ -252,6 +257,3 @@ def callback_inline(call):
 
 
 bot.polling()
-
-
-	
