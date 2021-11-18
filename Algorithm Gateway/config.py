@@ -2,7 +2,7 @@ Token = "2055853816:AAFP99lG-PeNwKnvJ2LhjxKqIC0E3nQuBtY"
 
 cat_url = "http://vallisbackend.backoffice.uz/api/product/category-list/"
 
-pro_by_car_url = "http://vallisbackend.backoffice.uz/api/product/product-by-category/?category_id="
+pro_by_car_url = "http://vallisbackend.backoffice.uz/api/product/category-product/"
 
 pro_buy_price_url = "http://vallisbackend.backoffice.uz/api/product/income-price-list/"
 

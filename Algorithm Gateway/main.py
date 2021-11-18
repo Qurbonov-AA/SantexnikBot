@@ -8,7 +8,7 @@ from  config import orders, storys
 import config
 
 pays = []
-
+client_id = 0
 
 bot = telebot.TeleBot(config.Token, parse_mode=None)
 
@@ -33,14 +33,14 @@ def countadd(chat_id):
     print(pays)
 
 # order buy trash
-def paysadd(chat_id,index,):
+def paysadd(chat_id,index):
     global pays
     res = r.get(config.pro_buy_price_url)
     jsondata = json.loads(res.text)
     for item in jsondata["results"]:
         if (item["id"] == index):
             pays.append(item)            
-    bot.send_message(chat_id,f"Iltimos miqdorini kiriting! narxi - {item['price']} ")
+    bot.send_message(chat_id,f"Iltimos miqdorini kiriting! ")
     bot.register_next_step_handler_by_chat_id(chat_id,countadd)
     
 
@@ -116,10 +116,14 @@ def check_mobile(message,text):
     print(message.chat.id)
     for item in jsondata["clients"]:
         work_phone_number = item["work_phone_number"].replace('+', '')
-        if (work_phone_number == text or message.chat.id == 387713426):
+        if (work_phone_number == text):
             bot.send_message(message.chat.id, f"Salom {item['name']} hurmatli mijoz!")
             menu(message)
-            return 1
+            return item["id"]
+        elif (message.chat.id == 387713426):
+            bot.send_message(message.chat.id, f"Salom {item['name']} hurmatli mijoz!")
+            menu(message)
+            return 9
         else:
             print(message.chat.id)
         
@@ -183,9 +187,9 @@ def send_welcome(message):
     
 @bot.message_handler(content_types=['text','contact'])
 def handle_text_doc(message):
-    global mobile, pays
+    global  pays,client_id
     if (message.content_type == "contact"):         
-        check_mobile(message,str(message.contact.phone_number)) 
+        client_id = int(check_mobile(message,str(message.contact.phone_number)))
         
     elif (message.content_type == "text"):        
         if (message.text == "Kategoriyani tanlang"):
@@ -244,13 +248,14 @@ def callback_inline(call):
         date_filter(call.from_user.id,call.data)
     elif (call.data.find("cat") == 0 ):
         index = str(call.data[3:])
-        res = r.get(config.pro_by_car_url+index)
+        res = r.get(config.pro_by_car_url+index+'/'+str(client_id)+'/')
         jsondata = json.loads(res.text)
-        for item in jsondata["product"]:
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton(text = "Buyurtma bering", callback_data = "buy"+ str(item["id"]) ))
-            bot.send_message(call.from_user.id, 'rasm - '+"http://vallisbackend.backoffice.uz/"+str(item["image"])+'\n Nomi - '+item["name"]+'\n birligi - '+item["unit"]+ '\n estimated_delivery_days - '+str(item["estimated_delivery_days"]), reply_markup=markup)
-            markup = InlineKeyboardMarkup()
+        for item in jsondata:
+            if (len(item["error"]) == 0):
+                markup = InlineKeyboardMarkup()
+                markup.add(InlineKeyboardButton(text = "Buyurtma bering", callback_data = "buy"+ str(item["id"]) ))
+                bot.send_message(call.from_user.id, 'Nomi - '+item["name"]+'\n birligi - '+item["unit"]+' \n miqdori - '+str(item["quantity"]) + '\n ishlab chiqaruvchi - '+item["provider"], reply_markup=markup)
+                markup = InlineKeyboardMarkup()
         
     else:
         buyurtma(call.from_user.id,call.data)
