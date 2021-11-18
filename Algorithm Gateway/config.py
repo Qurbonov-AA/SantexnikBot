@@ -4,7 +4,7 @@ cat_url = "http://vallisbackend.backoffice.uz/api/product/category-list/"
 
 pro_by_car_url = "http://vallisbackend.backoffice.uz/api/product/category-product/"
 
-pro_buy_price_url = "http://vallisbackend.backoffice.uz/api/product/income-price-list/"
+pro_buy_price_url = "http://vallisbackend.backoffice.uz/api/product/product-detail/"
 
 client_url    = "http://vallisbackend.backoffice.uz/api/client/client-list/"
 

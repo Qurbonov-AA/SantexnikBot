@@ -35,11 +35,11 @@ def countadd(chat_id):
 # order buy trash
 def paysadd(chat_id,index):
     global pays
-    res = r.get(config.pro_buy_price_url)
+    res = r.get(config.pro_buy_price_url+str(index)+'/')
     jsondata = json.loads(res.text)
-    for item in jsondata["results"]:
-        if (item["id"] == index):
-            pays.append(item)            
+    # for item in jsondata["product"]:
+    #     if (item["id"] == index):
+    pays.append(jsondata["product"])            
     bot.send_message(chat_id,f"Iltimos miqdorini kiriting! ")
     bot.register_next_step_handler_by_chat_id(chat_id,countadd)
     
@@ -202,7 +202,7 @@ def handle_text_doc(message):
             markup = InlineKeyboardMarkup()
             for inx,item in enumerate(pays):
                 markup.add(InlineKeyboardButton("Savatchadan o'chirish", callback_data=str("del"+str(inx))  ))                
-                bot.send_message(message.chat.id, 'rasmi - '+str(item["product"]["image"])+'\n Maxsulot nomi - '+item["product"]["name"]+'\n miqdori - '+str(item["miqdor"])+'\n narxi - '+str(item["price"])+'\n', reply_markup=markup)
+                bot.send_message(message.chat.id, 'rasmi - '+str(item["image"])+'\n Maxsulot nomi - '+item["name"]+'\n miqdori - '+str(item["miqdor"])+'\n ', reply_markup=markup)
                 markup = InlineKeyboardMarkup()
         elif (message.text == "Info"):
             get_info(message)
