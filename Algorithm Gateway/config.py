@@ -8,6 +8,10 @@ pro_buy_price_url = "http://vallisbackend.backoffice.uz/api/product/product-deta
 
 client_url    = "http://vallisbackend.backoffice.uz/api/client/client-list/"
 
+order_post_url = "http://vallisbackend.backoffice.uz/api/order/sell-order-list-bot/"
+
+order_get_url = "http://vallisbackend.backoffice.uz/api/order/get-client-order/"
+
 
 main_btn = [ 'Kategoriyani tanlang', 'Savatcha', "Buyurtmalar tarixi",'Hisob kitob','Info' ] 
 

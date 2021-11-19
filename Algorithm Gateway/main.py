@@ -24,6 +24,24 @@ def filter(text):
     text = [c for c in text if c in '0123456789+ -']
     text = "".join(text) # alfabit harflaridan boshqa simvollarni uchiradi
     return text
+# get json_data post
+
+def post_data(client_id,myitem):
+    res = r.get(config.pro_by_car_url+str(myitem["category"]["id"])+'/'+str(client_id)+'/')
+    jsondata = json.loads(res.text)
+    for item in jsondata:
+        if (item["id"] == myitem["id"]):
+            data = { 
+                    "quantity": str(myitem["miqdor"]),                    
+                    "status": "ordered",
+                    "discount": "0",
+                    "product_discount": "0",
+                    "client": client_id,
+                    "product": myitem["id"],
+                    "price": item["price_id"],
+                    "dairy": "null",
+                    }
+            return data 
 
 
 #count add
@@ -39,7 +57,7 @@ def paysadd(chat_id,index):
     jsondata = json.loads(res.text)
     # for item in jsondata["product"]:
     #     if (item["id"] == index):
-    pays.append(jsondata["product"])            
+    pays.append(jsondata["product"])
     bot.send_message(chat_id,f"Iltimos miqdorini kiriting! ")
     bot.register_next_step_handler_by_chat_id(chat_id,countadd)
     
@@ -79,26 +97,33 @@ def p_buttons(chat_id):
 # filter date 
 def date_filter(chat_id,types):
     mydate = date.today()
-    if (types == "Kunlik"):
-        for item in orders:
-            if (item["date"].strftime("%d") == mydate.strftime("%d")):
-                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
-                bot.send_message(chat_id,mystr)
-    elif(types == "Haftalik"):
-        for item in orders:
-            if (item["date"].strftime("%a") == mydate.strftime("%a")):
-                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
-                bot.send_message(chat_id,mystr)
-    elif(types == "Oylik"):
-        for item in orders:
-            if (item["date"].strftime("%m") == mydate.strftime("%m")):
-                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
-                bot.send_message(chat_id,mystr)
-    elif(types == "Yillik"):
-        for item in orders:
-            if (item["date"].strftime("%Y") == mydate.strftime("%Y")):
-                mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
-                bot.send_message(chat_id,mystr)
+    global client_id
+    res = r.get(config.order_get_url+str(client_id)+'/') 
+    jsondata = json.loads(res.text)
+    for item in jsondata:
+        mystr = 'Miqdori - '+ str(item["given_quantity"]) + '\n Holati-' + item["status"] + '\n chegirma - ' + str(item["discount"]) + '\n'
+        bot.send_message(chat_id,mystr)
+    #             
+    # if (types == "Kunlik"):
+    #     for item in orders:
+    #         if (item["date"].strftime("%d") == mydate.strftime("%d")):
+    #             mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+    #             bot.send_message(chat_id,mystr)
+    # elif(types == "Haftalik"):
+    #     for item in orders:
+    #         if (item["date"].strftime("%a") == mydate.strftime("%a")):
+    #             mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+    #             bot.send_message(chat_id,mystr)
+    # elif(types == "Oylik"):
+    #     for item in orders:
+    #         if (item["date"].strftime("%m") == mydate.strftime("%m")):
+    #             mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+    #             bot.send_message(chat_id,mystr)
+    # elif(types == "Yillik"):
+    #     for item in orders:
+    #         if (item["date"].strftime("%Y") == mydate.strftime("%Y")):
+    #             mystr = item["tovar"]['img'] + '\n Maxsulot-' + item["tovar"]['Maxsulot'] + '\n Miqdori' + str(item["tovar"]['Omborda mavjud miqdor']) + '\n Narxi-' + str(dollartosumm(item["tovar"]['Narxi']))  + '\n Skidka-' + item["tovar"]['Skidka']+'\n Umumiy summa-'+ totalsumm(item["tovar"]['Omborda mavjud miqdor'],dollartosumm(item["tovar"]['Narxi']),item["tovar"]['Skidka'])+'\n Sanasi-'+str(item["date"])
+    #             bot.send_message(chat_id,mystr)
 
 
 
@@ -207,11 +232,18 @@ def handle_text_doc(message):
         elif (message.text == "Info"):
             get_info(message)
         elif (message.text == "Buyurtma tasdiqlash"):
-               (message)
+            for index,item in enumerate(pays):
+                data = post_data(client_id,item)                  
+                headers = {'Content-type': 'application/json', 'Accept': 'application/json', 'Content-Encoding': 'utf-8'}            
+                res = r.post(config.order_post_url, data = json.dumps(data), headers=headers )
+                print(data) 
+                print(res.text)
+                print(res.status_code)
         elif (message.text == "Asosiy menu"):
             menu(message)
         elif (message.text == "Buyurtmalar tarixi"):
             markup = InlineKeyboardMarkup()
+                       
             for item in storys:
                 markup.add(InlineKeyboardButton(text=str(item), callback_data=str(item) ))
             bot.send_message(message.chat.id, "Buyurtmalar tarixidan birini tanlang!", reply_markup=markup)
