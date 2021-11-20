@@ -101,7 +101,7 @@ def date_filter(chat_id,types):
     res = r.get(config.order_get_url+str(client_id)+'/') 
     jsondata = json.loads(res.text)
     for item in jsondata:
-        mystr = 'Miqdori - '+ str(item["given_quantity"]) + '\n Holati-' + item["status"] + '\n chegirma - ' + str(item["discount"]) + '\n'
+        mystr = 'Miqdori - '+ str(item["quantity"]) + '\n Holati-' + item["status"] + '\n chegirma - ' + str(item["discount"]) + '\n' + ' Maxsulot nomi - '+ item["product_name"]+'\n  Narxi-'+str(item["price_price"])
         bot.send_message(chat_id,mystr)
     #             
     # if (types == "Kunlik"):
